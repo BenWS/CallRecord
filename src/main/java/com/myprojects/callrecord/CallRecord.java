@@ -42,36 +42,50 @@ public class CallRecord extends Application {
     public void start(final Stage stage) {
 
         //Initializing Application Scenes       
-        //1. input page for name, company, and issue fields
+        
+        //1. Initialize application start page
+        final StartPage startPage = new StartPage();
+
+        //2. Initiailize input page for name, company, and issue fields
         final InputForm inputForm = new InputForm();
         
-        //2. creds page, along with credentials import
+        //3. Initialize creds page, along with credentials import
         final CredsForm credsForm = new CredsForm();
         
-        //3. confirmation page
+        //4. Initialize confirmation page
         final Confirmation confirmation = new Confirmation();
         
         //create password file if this doesn't exist already
         try {
-            File file = new File("CallRecordCredentials.txt"); 
+            File file = new File("ZenDeskCreds_for_App.txt"); 
             if (!file.exists()) {file.createNewFile();}
         
         } catch (IOException e) {}
        
-        //Event Handlers for User Interaction  
+        //Event Handlers for User Interaction 
+        
         //1.'Enter' Key Handlers
+        
         //inputScene 'Enter' key event handler
         inputForm.inputScene.setOnKeyPressed(new EventHandler <KeyEvent>() {
             @Override
             public void handle (KeyEvent keyEvent) {
                 if (KeyCode.ENTER == keyEvent.getCode()){
-                        //make requesrt  
+                        
+                        //make request  
                         try {
-                              inputForm.makeInputRequest(credsForm.sessionCreds);
-                         } catch (IOException ex) {System.out.println(ex);}
+                            inputForm.makeInputRequest(credsForm.sessionCreds);
+                         } catch (IOException ex){
+                             System.out.println(ex);
+                             credsForm.credsTitle.setText("Issue Encountered – Sorry!");
+                             credsForm.credsSubTitle.setText("Your Zendesk® Credentials May Be Invalid");
+                             stage.setScene(credsForm.credsScene);
+                         }
                        
                        //status-line=bad, send user to credentials page - otherwise use confirmation page
-                       if (inputForm.responseLine.equals("HTTP/1.1 401 Unauthorized")) {
+                       if (!inputForm.responseLine.equals("HTTP/1.1 201 Created")) {
+                           credsForm.credsTitle.setText("Issue Encountered – Sorry!");
+                           credsForm.credsSubTitle.setText("Your Zendesk® Credentials May Be Invalid");
                            stage.setScene(credsForm.credsScene);
                        }
                        else {
@@ -85,18 +99,13 @@ public class CallRecord extends Application {
         confirmation.confirmScene.setOnKeyPressed(new EventHandler <KeyEvent>() {
             @Override
             public void handle (KeyEvent keyEvent) {
-                if (KeyCode.ENTER == keyEvent.getCode()) {
-                        
-                        //reset question fields to empty
-                        inputForm.input_1.setText("");
-                        inputForm.input_1.requestFocus();
-                        inputForm.input_2.setText("");
-                        inputForm.input_3.setText("");
-                        
-                        stage.setScene(inputForm.inputScene);
-                        
+                //reset question fields to empty
+                inputForm.input_1.setText("");
+                inputForm.input_1.requestFocus();
+                inputForm.input_2.setText("");
+                inputForm.input_3.setText("");
 
-                }
+                stage.setScene(inputForm.inputScene);          
             }
         });
         
@@ -115,25 +124,32 @@ public class CallRecord extends Application {
         });
         
         //2. Submit Button Handlers
+        
         //inputScene Submit button event handler
         inputForm.submit.setOnAction(new EventHandler<ActionEvent> () {
-
+          
             @Override
             public void handle(ActionEvent event) {
-                 try {
-                     inputForm.makeInputRequest(credsForm.sessionCreds);
-                     
-                 } catch (IOException ex) {System.out.println(ex);}
-                      
-                       //status-line=bad, send user to credentials page - otherwise confirmation page
-                       if (inputForm.responseLine.equals("HTTP/1.1 401 Unauthorized")) {
+                        //make request
+                        try {
+                            inputForm.makeInputRequest(credsForm.sessionCreds);
+                         } catch (IOException ex){
+                             System.out.println(ex);
+                             credsForm.credsTitle.setText("Issue Encountered – Sorry!");
+                             credsForm.credsSubTitle.setText("Your Zendesk® Credentials May Be Invalid");
+                             stage.setScene(credsForm.credsScene);
+                         }
+                       
+                       //status-line=bad, send user to credentials page - otherwise use confirmation page
+                       if (!inputForm.responseLine.equals("HTTP/1.1 201 Created")) {
+                           credsForm.credsTitle.setText("Issue Encountered - Sorry!");
+                           credsForm.credsSubTitle.setText("Your Zendesk® Credentials May Be Invalid");
                            stage.setScene(credsForm.credsScene);
                        }
                        else {
                            stage.setScene(confirmation.confirmScene);
                        }
-            }
-        });
+            }});
         
         //credsScene Submit button event handler
         credsForm.submit.setOnAction(new EventHandler<ActionEvent> () {
@@ -148,19 +164,26 @@ public class CallRecord extends Application {
                 stage.setScene(inputForm.inputScene);
             }
         });
+        
+        //3.General Key Event Handler for Start Page
+        
+        startPage.startScene.setOnKeyPressed(new EventHandler<KeyEvent> () {
+            @Override
+            public void handle(KeyEvent keyEvent) {
+                //if ZenDesk credentials haven't been recorded, take user to credentials screen
+                if (Arrays.toString(credsForm.sessionCreds).equals("[null, null, null]")) {
+                    stage.setScene(credsForm.credsScene);
+                //otherwise take the user straight to the create ticket screen
+                } else {
+                    stage.setScene(inputForm.inputScene);
+                }
+            }
+    });
 
         
         //Setting Initial Scene
-        //if any of the creds array cells are empty, set the first scene as credsForm.
-        //if the creds scene isn't empty, set the inputScene.
-        
-        if (Arrays.toString(credsForm.sessionCreds).equals("[null, null, null]")) {
-            stage.setScene(credsForm.credsScene);
-            stage.show();
-        } else {
-        stage.setScene(inputForm.inputScene);
-        stage.show();
-                }
+        stage.setScene(startPage.startScene);
+        stage.show();       
     }
     
     public static void main(final String[] args) {
@@ -188,8 +211,8 @@ class InputForm {
     //text strings for field labels
     String input_1_labelString = "Name";
     String input_2_labelString = "Company";
-    String input_3_labelString = "Issue";
-    String inputTitleString = "Welcome";
+    String input_3_labelString = "Subject";
+    String inputTitleString = "Create New Ticket";
 
     //text nodes
     Text input_1_label = new Text(input_1_labelString);
@@ -204,11 +227,14 @@ class InputForm {
 
         //adding nodes to inputGrid
         inputGrid.add(inputTitle, 0, 0, 2, 1);
-        inputGrid.addRow(1, input_1_label, input_1);
-        inputGrid.addRow(2, input_2_label, input_2);
-        inputGrid.addRow(3, input_3_label, input_3);
+        inputGrid.add(input_1_label, 0, 1);
+        inputGrid.add(input_2_label, 0, 2);
+        inputGrid.add(input_3_label, 0, 3);
+        inputGrid.add(input_1, 1, 1);
+        inputGrid.add(input_2, 1, 2);
+        inputGrid.add(input_3, 1, 3);
         
-        submit.setAlignment(Pos.BOTTOM_RIGHT);
+        hbSubmit.setAlignment(Pos.BOTTOM_RIGHT);
         hbSubmit.getChildren().add(submit);
         inputGrid.add(hbSubmit, 1, 4);
 
@@ -231,24 +257,32 @@ class InputForm {
         }
 
     public void makeInputRequest (String[] creds) throws IOException {
-
-        //setting variables for HTTP Request Headers and Body       
-        String bodyKeyValue = this.input_3.getText();
-        String subjectKeyValue = "Call logged for "+ this.input_1.getText() + " with " + this.input_2.getText();
-        //use of creds[0] below keeps the url consistent with the host the user provides
+        
+        //Setting Request Data
+        
+        //http request header fields
         String endpoint = "https://" + creds[0] +  "/api/v2/tickets.json";
         String contentTypeField = "application/json";
         String acceptField = "application/json";
-
-
-        //the below builds an http client with the necessary credentials.
-        //the HTTPClient class provides methods for POST request
-        //execution, done a little further down   
         
+        //json array (request body)      
+        String subjectKeyValue = this.input_3.getText();
+        String bodyKeyValue = "Call received from "+ this.input_1.getText() + " with " + this.input_2.getText();
+        String jsonArray = "{\"ticket\": "
+                            + "{\"subject\": \"" + subjectKeyValue + "\", " 
+                            + "\"comment\": { \"body\": \"" + bodyKeyValue + "\","  
+                            +                "\"public\":\"false\"}"
+                            +"}";
+        
+        //Builing HTTP Client 
+        
+        //setting credentials provided in creds parameter
         CredentialsProvider credsProvider = new BasicCredentialsProvider();
         credsProvider.setCredentials(
             new AuthScope(creds[0], -1),
             new UsernamePasswordCredentials(creds[1], creds[2]));
+        
+        //creating HTTP client object
         CloseableHttpClient httpclient = HttpClients.custom()
                 .setDefaultCredentialsProvider(credsProvider)
                 .build();
@@ -257,14 +291,8 @@ class InputForm {
             //initiating POST request object with endpoint (defined above)
             HttpPost httpPost = new HttpPost(endpoint);
 
-            //adding message body to POST request httpPost
-            httpPost.setEntity(new StringEntity (
-
-                    "{\"ticket\": "
-                            + "{\"subject\": \"" + subjectKeyValue + "\", " 
-                            + "\"comment\": { \"body\": \"" + bodyKeyValue + "\"}, "
-                            + "\"requester_id\": 3981219687," +
-                              "\"submitter_id\": 3981219687}}"));
+            //adding JSON object to POST request message 
+            httpPost.setEntity(new StringEntity(jsonArray));
 
             //adding header fields to POST request httpPost
             httpPost.addHeader("Content-Type", contentTypeField);
@@ -304,20 +332,22 @@ class CredsForm {
     PasswordField creds_3 = new PasswordField();
 
     //button node and containing box
-    Button submit = new Button("Submit");
+    Button submit = new Button("Save");
     HBox hbSubmit = new HBox(10);
 
     //text strings for field labels
-    String creds_1_labelString = "Zendesk Subdomain";
+    String creds_1_labelString = "Subdomain";
     String creds_2_labelString = "Email";
     String creds_3_labelString = "Password";
-    String credsTitleString = "Provide Your Credentials";
+    String credsTitleString = "Tell Me About Yourself...";
+    String credsSubTitleString = "Please Provide your Zendesk® Credentials";
 
     //text nodes
     Text creds_1_label = new Text(creds_1_labelString);
     Text creds_2_label = new Text(creds_2_labelString);
     Text creds_3_label = new Text(creds_3_labelString);
     Text credsTitle = new Text(credsTitleString);
+    Text credsSubTitle = new Text(credsSubTitleString);
     
     //credentials for this session
     String[] sessionCreds;   
@@ -329,23 +359,29 @@ class CredsForm {
         
         //adding nodes to credsGrid
         credsGrid.add(credsTitle, 0, 0, 2, 1);
-        credsGrid.addRow(1, creds_1_label, creds_1);
-        credsGrid.addRow(2, creds_2_label, creds_2);
-        credsGrid.addRow(3, creds_3_label, creds_3);
+        credsGrid.add(credsSubTitle, 0, 1, 2, 1);
+        credsGrid.add(creds_1_label, 0, 2);
+        credsGrid.add(creds_2_label, 0, 3);
+        credsGrid.add(creds_3_label, 0, 4);
+        credsGrid.add(creds_1, 1, 2);
+        credsGrid.add(creds_2, 1, 3);
+        credsGrid.add(creds_3, 1, 4);
         
-        submit.setAlignment(Pos.BOTTOM_RIGHT);
+        
+        hbSubmit.setAlignment(Pos.BOTTOM_RIGHT);
         hbSubmit.getChildren().add(submit);
-        credsGrid.add(hbSubmit, 1, 4);
+        credsGrid.add(hbSubmit, 1, 5);
 
-        //setting additional positional properties
+        //setting grid element padding
         credsGrid.setAlignment(Pos.CENTER);
         credsGrid.setHgap(13);
         credsGrid.setVgap(13);
         credsGrid.setPadding(new Insets(25, 25, 25, 25));
         
-        //styling
+        //font styling
         credsTitle.setFont(Font.font("Tahoma", FontWeight.NORMAL, 23));
         credsTitle.setFill(Color.ORANGE);
+        credsSubTitle.setFont(Font.font("Tahoma", FontWeight.NORMAL, 12));
         
         creds_1_label.setFill(Color.BLUE);
         creds_1_label.setFont(Font.font("Tahoma", FontWeight.NORMAL, 14));
@@ -357,9 +393,10 @@ class CredsForm {
         }
     
     public void writeCreds () {
+        //Writes and Stores the Provided Credentials in ZenDeskCreds_for_App.txt File
         try {
-            //Preparing the file and the file writer objects
-            FileWriter fw = new FileWriter("CallRecordCredentials.txt");
+            //preparing the file and the file writer objects
+            FileWriter fw = new FileWriter("ZenDeskCreds_for_App.txt");
             BufferedWriter bw = new BufferedWriter(fw);
             
             //writing to the file
@@ -374,13 +411,15 @@ class CredsForm {
     
     public String[] readCreds() {
         
+        //Reads the Creds from ZenDeskCreds_for_App.txt File and Stores in Array
+        
         //credentials array
         String[] creds = new String[3];
         
         try {
                               
                 //preparing the file reader objects
-                FileReader fr = new FileReader("CallRecordCredentials.txt");
+                FileReader fr = new FileReader("ZenDeskCreds_for_App.txt");
                 BufferedReader br = new BufferedReader(fr);
                 
                 //reading the file
@@ -399,14 +438,16 @@ class CredsForm {
     
 class Confirmation {
         
+        //Request Confirmation Page
+        
         //scene nodes initialized
         GridPane confirmGrid = new GridPane();
         Scene confirmScene  = new Scene(confirmGrid, 400, 250);
          
         //confimation window text
         String confirmTitleString = "Ticket Submitted!";
-        String confirmMessageString = "Thank you – check your Zendesk "
-                                + "account to view the created ticket. You may now press ENTER to "
+        String confirmMessageString = "Check your Zendesk "
+                                + "account to view the created ticket. You may now press any key to "
                                 + "return to the previous screen.";
         
         //text field
@@ -414,17 +455,56 @@ class Confirmation {
         Text confirmTitle = new Text(confirmTitleString);
         
         public Confirmation() {
-            //adding, positioning nodes on gird
+            //adding, positioning nodes on grid
             confirmGrid.addRow(0,confirmTitle);
             confirmGrid.addRow(1, confirmMessage);
             confirmMessage.setWrappingWidth(250);
+            
+            //font styling
             confirmTitle.setFont(Font.font("Tahoma", FontWeight.NORMAL, 23));
             confirmTitle.setFill(Color.ORANGE);
             
-            //styling
+            //grid element padding
             confirmGrid.setAlignment(Pos.CENTER);
             confirmGrid.setHgap(13);
             confirmGrid.setVgap(13);
             confirmGrid.setPadding(new Insets(25, 25, 25, 25));
+        }
+}
+
+class StartPage {
+        
+        //Start Page
+        
+        //scene nodes initialized
+        GridPane startGrid = new GridPane();
+        Scene startScene  = new Scene(startGrid, 400, 250);
+         
+        //start window text
+        String startTitleString = "Welcome";
+        String startMessageString = "This is a tool for submitting Zendesk tickets. "
+                                  + "When you submit a ticket, it will appear under the 'Tickets Requiring "
+                                  + "Your Attention' view in Zendesk, and there you will be identified as the ticket requester. "
+                                  + "Press any key to continue.";
+        
+        //text field
+        Text startMessage = new Text(startMessageString);
+        Text startTitle = new Text(startTitleString);
+        
+        public StartPage() {
+            //adding, positioning nodes on grid
+            startGrid.addRow(0,startTitle);
+            startGrid.addRow(1, startMessage);
+            startMessage.setWrappingWidth(300);
+            
+            //font styling
+            startTitle.setFont(Font.font("Tahoma", FontWeight.NORMAL, 23));
+            startTitle.setFill(Color.ORANGE);
+            
+            //grid element padding
+            startGrid.setAlignment(Pos.CENTER);
+            startGrid.setHgap(13);
+            startGrid.setVgap(13);
+            startGrid.setPadding(new Insets(25, 25, 25, 25));
         }
 }
