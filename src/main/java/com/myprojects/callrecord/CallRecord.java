@@ -6,7 +6,11 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Locale;
 import javafx.application.Application;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
@@ -265,9 +269,18 @@ class InputForm {
         String contentTypeField = "application/json";
         String acceptField = "application/json";
         
+        //variables for log date and time
+        Calendar cal = Calendar.getInstance(Locale.ENGLISH);
+        DateFormat dateFormat = new SimpleDateFormat("MM/dd/yy");
+        DateFormat timeFormat = new SimpleDateFormat("h:mm a");
+        String dateString = dateFormat.format(cal.getTime());
+        String timeString = timeFormat.format(cal.getTime());
+        
         //json array (request body)      
         String subjectKeyValue = this.input_3.getText();
-        String bodyKeyValue = "Call received from "+ this.input_1.getText() + " with " + this.input_2.getText();
+        String bodyKeyValue = "Ticket logged for "+ this.input_1.getText() 
+                            + " with " + this.input_2.getText() + " at " + timeString + " on " + dateString;
+        
         String jsonArray = "{\"ticket\": "
                             + "{\"subject\": \"" + subjectKeyValue + "\", " 
                             + "\"comment\": { \"body\": \"" + bodyKeyValue + "\","  
