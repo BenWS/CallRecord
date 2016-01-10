@@ -44,11 +44,24 @@ public class CallRecord extends Application {
         
     @Override
     public void start(final Stage stage) {
-
-        //Initializing Application Scenes       
+        
+        //Defining Constructor Arguments 
+        String welcomeTitle = "Welcome";
+        String welcomeMessage = "This is a tool for submitting Zendesk tickets. "
+                              + "When you submit a ticket, it will appear under the 'Tickets Requiring "
+                              + "Your Attention' view in Zendesk, and there you will be identified as the ticket requester. "
+                              + "Press any key to continue.";
+        
+        //confimation window text
+        String confirmTitle = "Ticket Submitted!";
+        String confirmMessage = "Check your Zendesk "
+                              + "account to view the created ticket. You may now press any key to "
+                              + "return to the previous screen.";
+       
+        //Initializing Application Scenes    
         
         //1. Initialize application start page
-        final StartPage startPage = new StartPage();
+        final Notification welcomePage = new Notification(welcomeTitle, welcomeMessage);
 
         //2. Initiailize input page for name, company, and issue fields
         final InputForm inputForm = new InputForm();
@@ -57,14 +70,7 @@ public class CallRecord extends Application {
         final CredsForm credsForm = new CredsForm();
         
         //4. Initialize confirmation page
-        final Confirmation confirmation = new Confirmation();
-        
-        //create password file if this doesn't exist already
-        try {
-            File file = new File("ZenDeskCreds_for_App.txt"); 
-            if (!file.exists()) {file.createNewFile();}
-        
-        } catch (IOException e) {}
+        final Notification confirmPage = new Notification(confirmTitle, confirmMessage);
        
         //Event Handlers for User Interaction 
         
@@ -86,21 +92,21 @@ public class CallRecord extends Application {
                              stage.setScene(credsForm.credsScene);
                          }
                        
-                       //status-line=bad, send user to credentials page - otherwise use confirmation page
-                       if (!inputForm.responseLine.equals("HTTP/1.1 201 Created")) {
-                           credsForm.credsTitle.setText("Issue Encountered – Sorry!");
-                           credsForm.credsSubTitle.setText("Your Zendesk® Credentials May Be Invalid");
-                           stage.setScene(credsForm.credsScene);
-                       }
-                       else {
-                           stage.setScene(confirmation.confirmScene);
+                        //status-line=bad, send user to credentials page - otherwise use confirmation page
+                        if (!inputForm.responseLine.equals("HTTP/1.1 201 Created")) {
+                            credsForm.credsTitle.setText("Issue Encountered – Sorry!");
+                            credsForm.credsSubTitle.setText("Your Zendesk® Credentials May Be Invalid");
+                            stage.setScene(credsForm.credsScene);
+                        }
+                        else {
+                            stage.setScene(confirmPage.scene);
                        }
                     }
                 }
         });
         
         //confirmScene 'Enter' key event handler
-        confirmation.confirmScene.setOnKeyPressed(new EventHandler <KeyEvent>() {
+        confirmPage.scene.setOnKeyPressed(new EventHandler <KeyEvent>() {
             @Override
             public void handle (KeyEvent keyEvent) {
                 //reset question fields to empty
@@ -144,15 +150,15 @@ public class CallRecord extends Application {
                              stage.setScene(credsForm.credsScene);
                          }
                        
-                       //status-line=bad, send user to credentials page - otherwise use confirmation page
-                       if (!inputForm.responseLine.equals("HTTP/1.1 201 Created")) {
-                           credsForm.credsTitle.setText("Issue Encountered - Sorry!");
-                           credsForm.credsSubTitle.setText("Your Zendesk® Credentials May Be Invalid");
-                           stage.setScene(credsForm.credsScene);
-                       }
-                       else {
-                           stage.setScene(confirmation.confirmScene);
-                       }
+                        //status-line=bad, send user to credentials page - otherwise use confirmation page
+                        if (!inputForm.responseLine.equals("HTTP/1.1 201 Created")) {
+                            credsForm.credsTitle.setText("Issue Encountered - Sorry!");
+                            credsForm.credsSubTitle.setText("Your Zendesk® Credentials May Be Invalid");
+                            stage.setScene(credsForm.credsScene);
+                        }
+                        else {
+                            stage.setScene(confirmPage.scene);
+                        }
             }});
         
         //credsScene Submit button event handler
@@ -171,7 +177,7 @@ public class CallRecord extends Application {
         
         //3.General Key Event Handler for Start Page
         
-        startPage.startScene.setOnKeyPressed(new EventHandler<KeyEvent> () {
+        welcomePage.scene.setOnKeyPressed(new EventHandler<KeyEvent> () {
             @Override
             public void handle(KeyEvent keyEvent) {
                 //if ZenDesk credentials haven't been recorded, take user to credentials screen
@@ -186,7 +192,7 @@ public class CallRecord extends Application {
 
         
         //Setting Initial Scene
-        stage.setScene(startPage.startScene);
+        stage.setScene(welcomePage.scene);
         stage.show();       
     }
     
@@ -408,8 +414,15 @@ class CredsForm {
     public void writeCreds () {
         //Writes and Stores the Provided Credentials in ZenDeskCreds_for_App.txt File
         try {
+         
+            //create password file if this doesn't exist already
+            File file = new File("ZenDeskCreds_for_App.txt"); 
+            if (!file.exists()) {
+                file.createNewFile();
+            }
+        
             //preparing the file and the file writer objects
-            FileWriter fw = new FileWriter("ZenDeskCreds_for_App.txt");
+            FileWriter fw = new FileWriter(file);
             BufferedWriter bw = new BufferedWriter(fw);
             
             //writing to the file
@@ -430,6 +443,12 @@ class CredsForm {
         String[] creds = new String[3];
         
         try {
+            
+                //create password file if this doesn't exist already
+                File file = new File("ZenDeskCreds_for_App.txt"); 
+                if (!file.exists()) {
+                    file.createNewFile();
+                }            
                               
                 //preparing the file reader objects
                 FileReader fr = new FileReader("ZenDeskCreds_for_App.txt");
@@ -449,75 +468,46 @@ class CredsForm {
     } 
 }
     
-class Confirmation {
-        
-        //Request Confirmation Page
-        
-        //scene nodes initialized
-        GridPane confirmGrid = new GridPane();
-        Scene confirmScene  = new Scene(confirmGrid, 400, 250);
-         
-        //confimation window text
-        String confirmTitleString = "Ticket Submitted!";
-        String confirmMessageString = "Check your Zendesk "
-                                + "account to view the created ticket. You may now press any key to "
-                                + "return to the previous screen.";
-        
-        //text field
-        Text confirmMessage = new Text(confirmMessageString);
-        Text confirmTitle = new Text(confirmTitleString);
-        
-        public Confirmation() {
-            //adding, positioning nodes on grid
-            confirmGrid.addRow(0,confirmTitle);
-            confirmGrid.addRow(1, confirmMessage);
-            confirmMessage.setWrappingWidth(250);
-            
-            //font styling
-            confirmTitle.setFont(Font.font("Tahoma", FontWeight.NORMAL, 23));
-            confirmTitle.setFill(Color.ORANGE);
-            
-            //grid element padding
-            confirmGrid.setAlignment(Pos.CENTER);
-            confirmGrid.setHgap(13);
-            confirmGrid.setVgap(13);
-            confirmGrid.setPadding(new Insets(25, 25, 25, 25));
-        }
-}
-
-class StartPage {
+class Notification {
         
         //Start Page
         
         //scene nodes initialized
-        GridPane startGrid = new GridPane();
-        Scene startScene  = new Scene(startGrid, 400, 250);
-         
-        //start window text
-        String startTitleString = "Welcome";
-        String startMessageString = "This is a tool for submitting Zendesk tickets. "
-                                  + "When you submit a ticket, it will appear under the 'Tickets Requiring "
-                                  + "Your Attention' view in Zendesk, and there you will be identified as the ticket requester. "
-                                  + "Press any key to continue.";
+        GridPane grid = new GridPane();
+        Scene scene  = new Scene(grid, 400, 250);
         
         //text field
-        Text startMessage = new Text(startMessageString);
-        Text startTitle = new Text(startTitleString);
+        Text messageNode;
+        Text titleNode;
+
+        //text strings
+
+        String notificationMessage;
+        String notificationTitle;
         
-        public StartPage() {
+        public Notification(String titleString, String messageString) {
+            
+            //setting message contents
+            notificationMessage = messageString;
+            notificationTitle = titleString;
+            
+            messageNode = new Text(messageString);
+            titleNode = new Text(titleString);
+
             //adding, positioning nodes on grid
-            startGrid.addRow(0,startTitle);
-            startGrid.addRow(1, startMessage);
-            startMessage.setWrappingWidth(300);
+            grid.addRow(0,titleNode);
+            grid.addRow(1, messageNode);
+            messageNode.setWrappingWidth(300);
             
             //font styling
-            startTitle.setFont(Font.font("Tahoma", FontWeight.NORMAL, 23));
-            startTitle.setFill(Color.ORANGE);
+            titleNode.setFont(Font.font("Tahoma", FontWeight.NORMAL, 23));
+            titleNode.setFill(Color.ORANGE);
             
             //grid element padding
-            startGrid.setAlignment(Pos.CENTER);
-            startGrid.setHgap(13);
-            startGrid.setVgap(13);
-            startGrid.setPadding(new Insets(25, 25, 25, 25));
+            grid.setAlignment(Pos.CENTER);
+            grid.setHgap(13);
+            grid.setVgap(13);
+            grid.setPadding(new Insets(25, 25, 25, 25));
+
         }
 }
