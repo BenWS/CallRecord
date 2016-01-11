@@ -64,7 +64,7 @@ public class CallRecord extends Application {
         final Notification welcomePage = new Notification(welcomeTitle, welcomeMessage);
 
         //2. Initiailize input page for name, company, and issue fields
-        final InputForm inputForm = new InputForm();
+        final TicketForm ticketForm = new TicketForm();
         
         //3. Initialize creds page, along with credentials import
         final CredsForm credsForm = new CredsForm();
@@ -77,26 +77,26 @@ public class CallRecord extends Application {
         //1.'Enter' Key Handlers
         
         //inputScene 'Enter' key event handler
-        inputForm.inputScene.setOnKeyPressed(new EventHandler <KeyEvent>() {
+        ticketForm.inputScene.setOnKeyPressed(new EventHandler <KeyEvent>() {
             @Override
             public void handle (KeyEvent keyEvent) {
                 if (KeyCode.ENTER == keyEvent.getCode()){
                         
                         //make request  
                         try {
-                            inputForm.makeInputRequest(credsForm.sessionCreds);
+                            ticketForm.makeInputRequest(credsForm.sessionCreds);
                          } catch (IOException ex){
                              System.out.println(ex);
-                             credsForm.credsTitle.setText("Issue Encountered – Sorry!");
-                             credsForm.credsSubTitle.setText("Your Zendesk® Credentials May Be Invalid");
-                             stage.setScene(credsForm.credsScene);
+                             credsForm.inputTitle.setText("Issue Encountered – Sorry!");
+                             credsForm.inputSubtitle.setText("Your Zendesk Credentials May Be Invalid");
+                             stage.setScene(credsForm.inputScene);
                          }
                        
                         //status-line=bad, send user to credentials page - otherwise use confirmation page
-                        if (!inputForm.responseLine.equals("HTTP/1.1 201 Created")) {
-                            credsForm.credsTitle.setText("Issue Encountered – Sorry!");
-                            credsForm.credsSubTitle.setText("Your Zendesk® Credentials May Be Invalid");
-                            stage.setScene(credsForm.credsScene);
+                        if (!ticketForm.responseLine.equals("HTTP/1.1 201 Created")) {
+                            credsForm.inputTitle.setText("Issue Encountered – Sorry!");
+                            credsForm.inputSubtitle.setText("Your Zendesk Credentials May Be Invalid");
+                            stage.setScene(credsForm.inputScene);
                         }
                         else {
                             stage.setScene(confirmPage.scene);
@@ -110,17 +110,17 @@ public class CallRecord extends Application {
             @Override
             public void handle (KeyEvent keyEvent) {
                 //reset question fields to empty
-                inputForm.input_1.setText("");
-                inputForm.input_1.requestFocus();
-                inputForm.input_2.setText("");
-                inputForm.input_3.setText("");
+                ticketForm.input_1.setText("");
+                ticketForm.input_1.requestFocus();
+                ticketForm.input_2.setText("");
+                ticketForm.input_3.setText("");
 
-                stage.setScene(inputForm.inputScene);          
+                stage.setScene(ticketForm.inputScene);          
             }
         });
         
-        //credsScene 'Enter' key event handler
-        credsForm.credsScene.setOnKeyPressed(new EventHandler <KeyEvent>() {
+        //inputScene 'Enter' key event handler
+        credsForm.inputScene.setOnKeyPressed(new EventHandler <KeyEvent>() {
             @Override
             public void handle (KeyEvent keyEvent) {
                 if (KeyCode.ENTER == keyEvent.getCode()){
@@ -128,7 +128,7 @@ public class CallRecord extends Application {
                              credsForm.writeCreds();
                              //read creds again
                              credsForm.sessionCreds = credsForm.readCreds();
-                             stage.setScene(inputForm.inputScene);
+                             stage.setScene(ticketForm.inputScene);
                     }
                 }
         });
@@ -136,32 +136,32 @@ public class CallRecord extends Application {
         //2. Submit Button Handlers
         
         //inputScene Submit button event handler
-        inputForm.submit.setOnAction(new EventHandler<ActionEvent> () {
+        ticketForm.submit.setOnAction(new EventHandler<ActionEvent> () {
           
             @Override
             public void handle(ActionEvent event) {
                         //make request
                         try {
-                            inputForm.makeInputRequest(credsForm.sessionCreds);
+                            ticketForm.makeInputRequest(credsForm.sessionCreds);
                          } catch (IOException ex){
                              System.out.println(ex);
-                             credsForm.credsTitle.setText("Issue Encountered – Sorry!");
-                             credsForm.credsSubTitle.setText("Your Zendesk® Credentials May Be Invalid");
-                             stage.setScene(credsForm.credsScene);
+                             credsForm.inputTitle.setText("Issue Encountered – Sorry!");
+                             credsForm.inputSubtitle.setText("Your Zendesk Credentials May Be Invalid");
+                             stage.setScene(credsForm.inputScene);
                          }
                        
                         //status-line=bad, send user to credentials page - otherwise use confirmation page
-                        if (!inputForm.responseLine.equals("HTTP/1.1 201 Created")) {
-                            credsForm.credsTitle.setText("Issue Encountered - Sorry!");
-                            credsForm.credsSubTitle.setText("Your Zendesk® Credentials May Be Invalid");
-                            stage.setScene(credsForm.credsScene);
+                        if (!ticketForm.responseLine.equals("HTTP/1.1 201 Created")) {
+                            credsForm.inputTitle.setText("Issue Encountered - Sorry!");
+                            credsForm.inputSubtitle.setText("Your Zendesk Credentials May Be Invalid");
+                            stage.setScene(credsForm.inputScene);
                         }
                         else {
                             stage.setScene(confirmPage.scene);
                         }
             }});
         
-        //credsScene Submit button event handler
+        //inputScene Submit button event handler
         credsForm.submit.setOnAction(new EventHandler<ActionEvent> () {
 
             @Override
@@ -171,7 +171,7 @@ public class CallRecord extends Application {
                 //read creds again
                 credsForm.sessionCreds = credsForm.readCreds();
                 System.out.println(Arrays.toString(credsForm.sessionCreds));
-                stage.setScene(inputForm.inputScene);
+                stage.setScene(ticketForm.inputScene);
             }
         });
         
@@ -182,10 +182,10 @@ public class CallRecord extends Application {
             public void handle(KeyEvent keyEvent) {
                 //if ZenDesk credentials haven't been recorded, take user to credentials screen
                 if (Arrays.toString(credsForm.sessionCreds).equals("[null, null, null]")) {
-                    stage.setScene(credsForm.credsScene);
+                    stage.setScene(credsForm.inputScene);
                 //otherwise take the user straight to the create ticket screen
                 } else {
-                    stage.setScene(inputForm.inputScene);
+                    stage.setScene(ticketForm.inputScene);
                 }
             }
     });
@@ -200,7 +200,7 @@ public class CallRecord extends Application {
         launch(args);
     }
 }
-    
+
 class InputForm {
 
     //GridPane parent node and containing scene
@@ -209,26 +209,29 @@ class InputForm {
     GridPane inputGrid = new GridPane();
     Scene inputScene = new Scene(inputGrid, 400, 300);
 
+    //text strings for field labels
+    String input_1_labelString = "Name";
+    String input_2_labelString = "Company";
+    String input_3_labelString = "Subject";
+    String inputTitleString = "Create New Ticket";
+    String inputSubtitleString;
+    String buttonText;
+    
     //text field nodes
     TextField input_1 = new TextField();
     TextField input_2 = new TextField();
     TextField input_3 = new TextField();
 
     //button node and wrapper
-    Button submit = new Button("Submit");
+    Button submit = new Button(buttonText);
     HBox hbSubmit = new HBox(10);
-
-    //text strings for field labels
-    String input_1_labelString = "Name";
-    String input_2_labelString = "Company";
-    String input_3_labelString = "Subject";
-    String inputTitleString = "Create New Ticket";
 
     //text nodes
     Text input_1_label = new Text(input_1_labelString);
     Text input_2_label = new Text(input_2_labelString);
     Text input_3_label = new Text(input_3_labelString);
     Text inputTitle = new Text(inputTitleString);
+    Text inputSubtitle = new Text(inputSubtitleString);
     
     //HTTP Request Data
     String responseLine;
@@ -237,16 +240,17 @@ class InputForm {
 
         //adding nodes to inputGrid
         inputGrid.add(inputTitle, 0, 0, 2, 1);
-        inputGrid.add(input_1_label, 0, 1);
-        inputGrid.add(input_2_label, 0, 2);
-        inputGrid.add(input_3_label, 0, 3);
-        inputGrid.add(input_1, 1, 1);
-        inputGrid.add(input_2, 1, 2);
-        inputGrid.add(input_3, 1, 3);
+        inputGrid.add(inputSubtitle, 0, 1, 2, 1);
+        inputGrid.add(input_1_label, 0, 2);
+        inputGrid.add(input_2_label, 0, 3);
+        inputGrid.add(input_3_label, 0, 4);
+        inputGrid.add(input_1, 1, 2);
+        inputGrid.add(input_2, 1, 3);
+        inputGrid.add(input_3, 1, 4);
         
         hbSubmit.setAlignment(Pos.BOTTOM_RIGHT);
         hbSubmit.getChildren().add(submit);
-        inputGrid.add(hbSubmit, 1, 4);
+        inputGrid.add(hbSubmit, 1, 5);
 
         //setting additional positional properties
         inputGrid.setAlignment(Pos.CENTER);
@@ -265,6 +269,17 @@ class InputForm {
         input_3_label.setFill(Color.BLUE);
         input_3_label.setFont(Font.font("Tahoma", FontWeight.NORMAL, 14));
         }
+}
+
+class TicketForm extends InputForm {
+    
+    //HTTP Request Data
+    String responseLine;
+    
+    public TicketForm() {
+        super();
+        submit.setText("Submit");
+    }
 
     public void makeInputRequest (String[] creds) throws IOException {
         
@@ -337,79 +352,16 @@ class InputForm {
     }
 }
 
-class CredsForm {
-
-    //GridPane parent node and containing scene
+class CredsForm extends InputForm {
     
-    //initializing scene
-    GridPane credsGrid = new GridPane();
-    Scene credsScene = new Scene(credsGrid, 400, 300);
-
-    //text and password field nodes
-    TextField creds_1 = new TextField();
-    TextField creds_2 = new TextField();
-    PasswordField creds_3 = new PasswordField();
-
-    //button node and containing box
-    Button submit = new Button("Save");
-    HBox hbSubmit = new HBox(10);
-
-    //text strings for field labels
-    String creds_1_labelString = "Subdomain";
-    String creds_2_labelString = "Email";
-    String creds_3_labelString = "Password";
-    String credsTitleString = "Tell Me About Yourself...";
-    String credsSubTitleString = "Please Provide your Zendesk® Credentials";
-
-    //text nodes
-    Text creds_1_label = new Text(creds_1_labelString);
-    Text creds_2_label = new Text(creds_2_labelString);
-    Text creds_3_label = new Text(creds_3_labelString);
-    Text credsTitle = new Text(credsTitleString);
-    Text credsSubTitle = new Text(credsSubTitleString);
+    String[] sessionCreds;
     
-    //credentials for this session
-    String[] sessionCreds;   
-
-    public CredsForm () {
-        
-        //reading from credentails file
-        this.sessionCreds = this.readCreds();
-        
-        //adding nodes to credsGrid
-        credsGrid.add(credsTitle, 0, 0, 2, 1);
-        credsGrid.add(credsSubTitle, 0, 1, 2, 1);
-        credsGrid.add(creds_1_label, 0, 2);
-        credsGrid.add(creds_2_label, 0, 3);
-        credsGrid.add(creds_3_label, 0, 4);
-        credsGrid.add(creds_1, 1, 2);
-        credsGrid.add(creds_2, 1, 3);
-        credsGrid.add(creds_3, 1, 4);
-        
-        
-        hbSubmit.setAlignment(Pos.BOTTOM_RIGHT);
-        hbSubmit.getChildren().add(submit);
-        credsGrid.add(hbSubmit, 1, 5);
-
-        //setting grid element padding
-        credsGrid.setAlignment(Pos.CENTER);
-        credsGrid.setHgap(13);
-        credsGrid.setVgap(13);
-        credsGrid.setPadding(new Insets(25, 25, 25, 25));
-        
-        //font styling
-        credsTitle.setFont(Font.font("Tahoma", FontWeight.NORMAL, 23));
-        credsTitle.setFill(Color.ORANGE);
-        credsSubTitle.setFont(Font.font("Tahoma", FontWeight.NORMAL, 12));
-        
-        creds_1_label.setFill(Color.BLUE);
-        creds_1_label.setFont(Font.font("Tahoma", FontWeight.NORMAL, 14));
-        creds_2_label.setFill(Color.BLUE);
-        creds_2_label.setFont(Font.font("Tahoma", FontWeight.NORMAL, 14));
-        creds_3_label.setFill(Color.BLUE);
-        creds_3_label.setFont(Font.font("Tahoma", FontWeight.NORMAL, 14));
-        
-        }
+    public CredsForm() {
+        super();
+        sessionCreds = this.readCreds();
+        inputSubtitle.setText("Please Provide your Zendesk Credentials");
+        submit.setText("Save");
+    }
     
     public void writeCreds () {
         //Writes and Stores the Provided Credentials in ZenDeskCreds_for_App.txt File
@@ -426,7 +378,7 @@ class CredsForm {
             BufferedWriter bw = new BufferedWriter(fw);
             
             //writing to the file
-            bw.write(this.creds_1.getText() + "\n" + this.creds_2.getText() + "\n" + this.creds_3.getText());
+            bw.write(this.input_1.getText() + "\n" + this.input_2.getText() + "\n" + this.input_3.getText());
             
             //releasing the connection
             bw.close();
